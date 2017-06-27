@@ -1,0 +1,13 @@
+default:  &default
+    adapter: sqlite3
+    encoding: utf8
+    pool: 5
+    timeout: 5000
+
+development:
+    <<: *default
+    database: db/cp_chiepherd.db
+
+test:
+    <<: *default
+    database: db/cp_chiepherd_test.db
