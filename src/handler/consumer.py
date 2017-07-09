@@ -1,23 +1,27 @@
 import logging
 import pika
 from .router import Router
+from threading import Thread
+
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Consumer:
+class Consumer(Thread):
     EXCHANGE = 'chiepherd.main'
     EXCHANGE_TYPE = 'topic'
     QUEUE = '#'
-    ROUTING_KEY = 'chiepherd.#'
+    ROUTING_KEY = '#.reply'
 
-    def __init__(self, amqp_url):
+    def __init__(self, amqp_url, routing_key='#.reply'):
+        Thread.__init__(self)
         self._connection = None
         self._channel = None
         self._closing = False
         self._consumer_tag = None
         self._url = amqp_url
         self.router = Router()
+        self.ROUTING_KEY = routing_key
 
     def connect(self):
         LOGGER.info('Connecting to %s', self._url)
@@ -119,7 +123,7 @@ class Consumer:
     def on_message(self, channel, basic_deliver, properties, body):
         LOGGER.info('Received message # %s from %s: %s',
                     basic_deliver.delivery_tag, properties.app_id, body)
-        self.router.on_message(body, basic_deliver.routing_key)
+        self.router.on_message(body, basic_deliver.routing_key, properties)
         self.acknowledge_message(basic_deliver.delivery_tag)
 
     def acknowledge_message(self, delivery_tag):
@@ -147,7 +151,7 @@ class Consumer:
         LOGGER.info('Stopping')
         self._closing = True
         self.stop_consuming()
-        self._connection.ioloop.start()
+        self._connection.ioloop.stop()
         LOGGER.info('Stopped')
 
     def close_connection(self):

@@ -10,8 +10,14 @@ LOG_FORMAT = ('%(levelname) -10s %(asctime)s %(name) -30s %(funcName) '
 
 def run():
     logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
-    example = Consumer('amqp://root:root@192.168.56.100:5672/')
+    sniffer = Consumer('amqp://root:root@192.168.56.200:5672/')
+    consumer = Consumer('amqp://root:root@192.168.56.200:5672/', 'chat.#')
     try:
-        example.run()
+        sniffer.start()
+        consumer.start()
+
+        sniffer.join()
+        consumer.join()
     except KeyboardInterrupt:
-        example.stop()
+        sniffer.stop()
+        consumer.stop()
